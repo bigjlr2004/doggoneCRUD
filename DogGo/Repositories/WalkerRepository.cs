@@ -65,6 +65,47 @@ namespace DogGo.Repositories
                 }
             }
         }
+        public List<Walker> GetWalkersInNeighborhood(int neighborhoodId)
+        {
+            using(SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"
+                     SELECT Walker.Id, Walker.[Name], Walker.ImageUrl, Walker.NeighborhoodId, 
+                           Neighborhood.Id as neighborHoodId, Neighborhood.Name as neighborHoodName
+                    FROM Walker
+                    LEFT JOIN Neighborhood on Neighborhood.Id = Walker.NeighborhoodId
+                    WHERE NeighborhoodId = @neighborhoodId";
+
+                    cmd.Parameters.AddWithValue("@neighborhoodId", neighborhoodId);
+
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        List<Walker> walkers = new List<Walker>();
+                        while (reader.Read())
+                        {
+                            Walker walker = new Walker
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                Name = reader.GetString(reader.GetOrdinal("Name")),
+                                ImageUrl = reader.GetString(reader.GetOrdinal("ImageUrl")),
+                                NeighborhoodId = reader.GetInt32(reader.GetOrdinal("NeighborhoodId")),
+                                Neighborhood = new Neighborhood
+                                {
+                                    Id = reader.GetInt32(reader.GetOrdinal("neighborHoodId")),
+                                    Name = reader.GetString(reader.GetOrdinal("neighborHoodName"))
+                                }
+
+                            };
+                            walkers.Add(walker);
+                        }
+                            return walkers;
+                    }
+                }
+            }
+        }
         public Walker GetWalkerById(int id)
         {
             using (SqlConnection conn =Connection)

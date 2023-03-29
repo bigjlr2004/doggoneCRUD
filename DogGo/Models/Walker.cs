@@ -8,7 +8,7 @@
         public string ImageUrl { get; set; }
 
         //created an instance of a new neighborhood for creating a new Walker.
-        public Neighborhood Neighborhood { get; set; } = new Neighborhood();
+        public Neighborhood Neighborhood { get; set; } 
 
     }
 }
