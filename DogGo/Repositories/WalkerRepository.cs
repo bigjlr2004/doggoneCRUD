@@ -27,6 +27,85 @@ namespace DogGo.Repositories
 
             }
         }
+
+        public int TotalWalksTime (int walkerId)
+        {
+            using (SqlConnection conn = Connection) 
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"
+                SELECT
+                SUM(Duration) as ALLWalksDuration, 
+                WalkerId as walkerId
+                FROM Walks
+                WHERE walkerId = @walkerId
+                GROUP BY walkerId";
+
+                    cmd.Parameters.AddWithValue("@walkerId", walkerId);
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        
+                        if (reader.Read())
+                        {
+                            int WalkDuration = reader.GetInt32(reader.GetOrdinal("AllWalksDuration"));
+                            return WalkDuration;
+                        }
+                        else
+                        {
+                            return 0;
+                        }
+                
+                    }
+                }
+                }
+        }
+        public List <Walk> WalksbyWalkerId(int walkerId)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"
+                SELECT Walks.Id, 
+                Date as walkDate,
+                Duration as walkDuration,
+                WalkerId as walkerId, 
+                Walks.DogId,
+                Dog.OwnerId,
+                Dog.Id,
+                Owner.Id,
+                Owner.Name ownerName
+                FROM Walks
+                Left Join Dog on Walks.DogId = Dog.Id
+                Left Join Owner on Dog.OwnerId = Owner.Id
+                WHERE walkerId = @walkerId
+            ";
+                    cmd.Parameters.AddWithValue("@walkerId", walkerId);
+
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        List<Walk> walks = new List<Walk>();
+                        while (reader.Read())
+                        {
+                            Walk walk = new Walk()
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                Date = reader.GetDateTime(reader.GetOrdinal("walkDate")),
+                                Duration = reader.GetInt32(reader.GetOrdinal("walkDuration")),
+                                OwnerName = reader.GetString(reader.GetOrdinal("ownerName"))
+                            };
+
+
+                            walks.Add(walk);
+                        }
+                        return walks;
+                    }
+                }
+            }
+        }
         public List<Walker> GetAllWalkers()
         {
             using (SqlConnection conn = Connection)
@@ -114,9 +193,11 @@ namespace DogGo.Repositories
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                        SELECT Id, [Name], ImageUrl, NeighborhoodId
+                        SELECT Walker.Id, Walker.[Name], ImageUrl, 
+                        Neighborhood.Id as neighborHoodId, Neighborhood.Name as neighborHoodName
                         FROM Walker
-                        Where Id = @id";
+                        LEFT JOIN Neighborhood on Neighborhood.Id = Walker.NeighborhoodId
+                        WHERE Walker.Id=@id";
 
                     cmd.Parameters.AddWithValue("@id", id);
 
@@ -129,7 +210,12 @@ namespace DogGo.Repositories
                                 Id = reader.GetInt32(reader.GetOrdinal("Id")),
                                 Name = reader.GetString(reader.GetOrdinal("Name")),
                                 ImageUrl = reader.GetString(reader.GetOrdinal("ImageUrl")),
-                                NeighborhoodId = reader.GetInt32(reader.GetOrdinal("NeighborhoodId"))
+                                NeighborhoodId = reader.GetInt32(reader.GetOrdinal("NeighborhoodId")),
+                                Neighborhood = new Neighborhood
+                                {
+                                    Id = reader.GetInt32(reader.GetOrdinal("neighborHoodId")),
+                                    Name = reader.GetString(reader.GetOrdinal("neighborHoodName"))
+                                }
                             };
                             return walker;
 
