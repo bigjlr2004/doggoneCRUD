@@ -118,6 +118,7 @@ namespace DogGo.Repositories
                 }
             }
         }
+
         public Owner GetOwnerByEmail(string email)
         {
             using SqlConnection conn = Connection;
